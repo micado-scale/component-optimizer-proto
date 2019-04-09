@@ -1,0 +1,20 @@
+sample:
+  timestamp: 1553263975
+  input_metrics:
+    - name: number_of_requests 
+      value: 3
+      
+    - name: cpu_usage
+      value: 64
+
+    - name: number_of_interrupts
+      value: 2
+
+    - name: number_of_ctx_switches
+      value: 2
+
+  target_metrics: 
+    - name: response_time
+      value: 0.3
+
+  vm_number: 4

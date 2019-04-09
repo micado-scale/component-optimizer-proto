@@ -1,0 +1,19 @@
+#format!
+constants: 
+    min_vm_number: 2
+    max_vm_number: 5
+    training_samples_required: 10
+    max_number_of_iterations: 300
+    nn_stop_error_rate: 0.85 
+    lr_stop_error_rate: 0.92
+    input_metrics: 
+      - name: number_of_requests 
+      - name: cpu_usage 
+      - name: number_of_interrupts
+      - name: number_of_ctx_switches
+    target_metrics: 
+      - name: response_time
+        min_threshold: 1
+        max_threshold: 7
+
+

@@ -1,0 +1,36 @@
+#TODO refactor, restructure...
+
+optimizer:
+    #log_dir: 'log'
+    #data_dir: 'data'
+    nn_filename: 'data/nn_training_data.csv'
+    lr_filename: 'data/lr_training_data.csv'
+    constants_filename: 'data/constants.yaml'
+    training_data_filename: 'data/training_data.zip'
+
+
+logging:
+    version: 1
+    root:
+        level: INFO
+        handlers: [console, file]
+    formatters:
+        simpleFormatter:
+            #format: "%(module)s %(asctime)s %(levelname)s %(message)s"
+            format: "%(asctime)s %(levelname)s %(message)s"
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: simpleFormatter
+            level: DEBUG
+            stream: ext://sys.stdout
+        file:
+            class : logging.FileHandler
+            formatter: simpleFormatter
+            mode: w
+            level: DEBUG
+            filename: log/optimizer.log #refactor!!
+    loggers:
+        optimizer:
+            propagate: false
+            handlers: [console, file]

@@ -1,3 +1,5 @@
+import os
+
 from ruamel import yaml
 import csv
 import zipfile
@@ -5,6 +7,15 @@ import zipfile
 import logging
 
 logger = logging.getLogger('optimizer')
+
+
+def create_dirs(directories):
+    for dir in directories: 
+        if not os.path.exists(dir):
+            try:
+                os.makedirs(dir)
+            except IOError as e: #?
+                logger.error(e)
 
 
 def read_yaml(yaml_file):

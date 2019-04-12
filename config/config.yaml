@@ -1,8 +1,9 @@
-#TODO refactor, restructure...
+directories:
+    log_dir: 'log'
+    data_dir: 'data'
 
-optimizer:
-    #log_dir: 'log'
-    #data_dir: 'data'
+
+optimizer: 
     nn_filename: 'data/nn_training_data.csv'
     lr_filename: 'data/lr_training_data.csv'
     constants_filename: 'data/constants.yaml'
@@ -16,7 +17,6 @@ logging:
         handlers: [console, file]
     formatters:
         simpleFormatter:
-            #format: "%(module)s %(asctime)s %(levelname)s %(message)s"
             format: "%(asctime)s %(levelname)s %(message)s"
     handlers:
         console:
@@ -29,7 +29,7 @@ logging:
             formatter: simpleFormatter
             mode: w
             level: DEBUG
-            filename: log/optimizer.log #refactor!!
+            filename: log/optimizer.log 
     loggers:
         optimizer:
             propagate: false

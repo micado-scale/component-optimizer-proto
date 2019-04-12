@@ -17,6 +17,9 @@ def opt_main():
     # load config file
     cfg = opt_utils.read_yaml(args.config_path)
 
+    #create neccessary directories 
+    opt_utils.create_dirs(cfg.get('directories').values())
+
     # create logger from provided config
     global logger
     logger = create_logger(cfg)
@@ -26,7 +29,7 @@ def opt_main():
     opt_rest.app.run(debug=True,
                      host=args.host,
                      port=args.port)
-
+                     
 
 def create_logger(config):
     try:

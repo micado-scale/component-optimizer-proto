@@ -18,7 +18,6 @@ constants = {}
 sample_number = 0
 vm_number_prev = 0
 
-
 def init_service(cfg):
     global logger
     logger = logging.getLogger('optimizer')
@@ -154,6 +153,7 @@ def get_advice():
             return jsonify('PRETRAINING PHASE', 0), 200
     else:
         logger.debug('TRAINING PHASE')
+        #call ml part
         return jsonify('TRAINING PHASE', 0), 200
 
 

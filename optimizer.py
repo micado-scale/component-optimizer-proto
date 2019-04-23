@@ -36,8 +36,7 @@ def create_logger(config):
         logging.config.dictConfig(config.get('logging'))
         logger = logging.getLogger('optimizer')
     except Exception as e:
-        print(
-            f'ERROR: Cannot process configuration file "{args.config_path}": {e}')
+        print(f'ERROR: Cannot process configuration file "{args.config_path}": {e}')
     else:
         logger.info('Optimizer initialized successfully')
         return logger

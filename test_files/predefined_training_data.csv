@@ -1,6 +1,0 @@
-"number_of_requests","cpu_usage","number_of_interrupts","number_of_ctx_switches","response_time"
-2,60,1,0,0.4
-3,64,2,2,0.3
-2,60,1,0,0.4
-2,60,1,0,0.4
-3,64,2,2,0.3

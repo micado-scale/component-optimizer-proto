@@ -1,0 +1,4 @@
+Flask>=0.12.3
+numpy>=1.14.0
+ruamel.yaml>=0.15.35
+

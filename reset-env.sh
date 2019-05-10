@@ -2,7 +2,7 @@
 
 set -ex
 
-PDIR=env/optimiser
+PDIR=env/optimizer
 
 echo "Reseting '$PDIR'"
 

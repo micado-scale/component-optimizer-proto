@@ -48,7 +48,7 @@ def init():
         target_metrics = [metric.get('name')
                           for metric in constants.get('target_metrics')]
         timestamp_col = ['timestamp']
-        vm_cols = ['vm_number', 'vm_number\'', 'vm_number_diff']
+        vm_cols = ['vm_number', 'vm_number_prev', 'vm_number_diff']
 
         logger.debug('Creating a .csv file for neural network...')
         opt_utils.persist_data(

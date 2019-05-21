@@ -133,6 +133,12 @@ def sample():
     return jsonify('OK'), 200
 
 
+def advice_msg(valid=False,phase='training',vmnumber=0,errmsg=None,confident=0):
+  if valid:
+    return jsonify(dict(valid=valid,phase=phase,vmnumber=vmnumber,confident=confident,errmsg='')), 200
+  else:
+    return jsonify(dict(valid=valid,phase=phase,vmnumber=vmnumber,confident=confident,errmsg=errmsg)), 400
+
 @app.route('/optimizer/advice', methods=['GET'])
 def get_advice():
     global logger
@@ -141,21 +147,26 @@ def get_advice():
 
     logger.debug('Checking phase...')
     if (sample_number == 0):
-        logger.error('There are no training samples yet.')
-        return jsonify(''), 400
+        msg = 'There are no training samples yet.'
+        logger.error(msg)
+        return advice_msg(valid=False,errmsg=msg)
     elif (sample_number < constants['training_samples_required']):
         logger.debug('PRETRAINING PHASE')
         if (sample_number == 1):
             logger.info('PRETRAINING PHASE - 1st call')
-            return jsonify('PRETRAINING PHASE - 1st call', int((constants.get('max_vm_number')+constants.get('min_vm_number'))/2)), 200
+            return advice_msg(valid=True,
+                              vmnumber=int((constants.get('max_vm_number')+constants.get('min_vm_number'))/2))
         else:
             logger.info('Collecting samples to get training started...')
-            return jsonify('PRETRAINING PHASE', 0), 200
+            return advice_msg(valid=False,
+                              errmsg='Not implemented yet.')
     else:
         logger.debug('TRAINING PHASE')
         #call ml part
-        return jsonify('TRAINING PHASE', 0), 200
-
+        import random
+        return advice_msg(valid=False,
+                          vmnumber=random.randint(constants.get('min_vm_number'),constants.get('max_vm_number')),
+                          errmsg='Not implemented yet.')
 
 class RequestException(Exception):
     def __init__(self, status_code, reason, *args):

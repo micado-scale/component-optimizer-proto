@@ -1,14 +1,5 @@
 # MiCADO - Scaling Optimizer with Machine Learning Support
 
-## Requirements 
-Python >= 3.6   
-flask  
-ruamel.yaml   
-numpy  
-scikit-learn   
-pandas  
-
-
 ## Start program 
 From project root run  
 ```python optimizer.py --cfg path/to_config_file```

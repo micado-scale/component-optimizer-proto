@@ -17,7 +17,7 @@ def opt_main():
     # load config file
     cfg = opt_utils.read_yaml(args.config_path)
 
-    #create neccessary directories 
+    # create neccessary directories 
     opt_utils.create_dirs(cfg.get('directories').values())
 
     # create logger from provided config

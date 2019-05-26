@@ -8,11 +8,16 @@ import logging.config
 import opt_config
 import opt_utils
 
+import advice
+from train import TrainingUnit
+
 
 app = Flask(__name__)
 
 logger = None
 conf = None
+training_unit = None
+training_result = None
 
 constants = {}
 sample_number = 0
@@ -42,11 +47,13 @@ def init():
         opt_utils.write_yaml(conf.constants_filename, constants)
         logger.debug('Constants saved to "data/constants.yaml"')
         logger.debug('Preparing database for training data...')
-        # input_metrics+timestamp is redundant!
+
         input_metrics = [metric.get('name')
                          for metric in constants.get('input_metrics')]
         target_metrics = [metric.get('name')
                           for metric in constants.get('target_metrics')]
+
+
         timestamp_col = ['timestamp']
         vm_cols = ['vm_number', 'vm_number_prev', 'vm_number_diff']
 
@@ -60,6 +67,11 @@ def init():
             conf.lr_filename, timestamp_col+input_metrics+vm_cols, 'w')
         logger.debug('File created')
 
+        global training_unit
+        training_unit = TrainingUnit(input_metrics, target_metrics, constants.get('target_metrics'), constants.get('max_number_of_scaling_activity'), constants.get('training_samples_required'), constants.get('nn_stop_error_rate'), constants.get('max_delta_vm'))
+        
+        advice.init(constants.get('training_samples_required'), constants.get('min_vm_number'), constants.get('max_vm_number'), constants.get('nn_stop_error_rate'), constants.get('target_metrics'))
+        
         logger.info('Optimizer REST initialized successfully ')
     return jsonify('OK'), 200
 
@@ -105,7 +117,6 @@ def sample():
         timestamp_col = [sample.get('sample').get('timestamp')]
         logger.debug('Sample data gained')
 
-        # timestamp+input_metrics is also redundant here!
         logger.debug(
             'Calculating difference between previous and current VM number')
         global vm_number_prev
@@ -116,7 +127,6 @@ def sample():
 
         logger.debug(
             'Saving timestamp, input and target metrics to neural network data file...')
-        # redundancy again
         opt_utils.persist_data(conf.nn_filename,
                                timestamp_col+input_metrics+target_metrics, 'a')
         logger.debug('Data saved')
@@ -129,44 +139,19 @@ def sample():
 
         vm_number_prev = vm_number
         logger.info('Sample received and processed.')
-
+        
+        #training
+        global training_result
+        training_result = training_unit.train(sample_number)
+        print('Training result: ', training_result)
     return jsonify('OK'), 200
 
 
-def advice_msg(valid=False,phase='training',vmnumber=0,errmsg=None,confident=0):
-  if valid:
-    return jsonify(dict(valid=valid,phase=phase,vmnumber=vmnumber,confident=confident,errmsg='')), 200
-  else:
-    return jsonify(dict(valid=valid,phase=phase,vmnumber=vmnumber,confident=confident,errmsg=errmsg)), 400
-
 @app.route('/optimizer/advice', methods=['GET'])
 def get_advice():
-    global logger
-    global constants
     global sample_number
-
-    logger.debug('Checking phase...')
-    if (sample_number == 0):
-        msg = 'There are no training samples yet.'
-        logger.error(msg)
-        return advice_msg(valid=False,errmsg=msg)
-    elif (sample_number < constants['training_samples_required']):
-        logger.debug('PRETRAINING PHASE')
-        if (sample_number == 1):
-            logger.info('PRETRAINING PHASE - 1st call')
-            return advice_msg(valid=True,
-                              vmnumber=int((constants.get('max_vm_number')+constants.get('min_vm_number'))/2))
-        else:
-            logger.info('Collecting samples to get training started...')
-            return advice_msg(valid=False,
-                              errmsg='Not implemented yet.')
-    else:
-        logger.debug('TRAINING PHASE')
-        #call ml part
-        import random
-        return advice_msg(valid=False,
-                          vmnumber=random.randint(constants.get('min_vm_number'),constants.get('max_vm_number')),
-                          errmsg='Not implemented yet.')
+    global training_result
+    return advice.get_advice(sample_number, *training_result)
 
 class RequestException(Exception):
     def __init__(self, status_code, reason, *args):

@@ -37,6 +37,19 @@ def write_yaml(yaml_file, data):
         except (IOError, yaml.YAMLError) as e:
             logger.error(e)
 
+#TODO refactor
+def read_data(filename, skip_header=False):
+    global logger
+    with open(filename, 'r') as csv_file:
+        try:
+            reader = csv.reader(csv_file, quoting=csv.QUOTE_NONNUMERIC, quotechar='"')
+        except (FileNotFoundError, IOError, csv.Error) as e:
+            logger.error(e)
+        else:
+            if skip_header:
+                next(reader, None)
+            return list(reader)
+
 
 def persist_data(filename, data, mode):
     global logger
@@ -62,9 +75,3 @@ def zip_files(files, zip_filename):
             logger.error(e)
         finally:
             zipf.close()
-
-
-
-
-
-

@@ -63,7 +63,7 @@ class TrainingUnit:
             return [None]*4 
         else: 
             print('Training starts now...')
-            read_training_data()
+            self.read_training_data()
 
             nn_predictions = None
             nn_error_rate = 1000.0 #temp 

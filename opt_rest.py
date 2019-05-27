@@ -68,9 +68,9 @@ def init():
         logger.debug('File created')
 
         global training_unit
-        training_unit = TrainingUnit(input_metrics, target_metrics, constants.get('target_metrics'), constants.get('max_number_of_scaling_activity'), constants.get('training_samples_required'), constants.get('nn_stop_error_rate'), constants.get('max_delta_vm'))
+        training_unit = TrainingUnit(input_metrics, target_metrics, constants.get('target_metrics'), constants.get('max_number_of_scaling_activity'), constants.get('training_samples_required'), constants.get('nn_stop_error_rate'), constants.get('max_delta_vm',2))
         
-        advice.init(constants.get('training_samples_required'), constants.get('min_vm_number'), constants.get('max_vm_number'), constants.get('nn_stop_error_rate'), constants.get('target_metrics'))
+        advice.init(constants.get('target_metrics'),constants.get('training_samples_required'), constants.get('min_vm_number'), constants.get('max_vm_number'), constants.get('nn_stop_error_rate'))
         
         logger.info('Optimizer REST initialized successfully ')
     return jsonify('OK'), 200

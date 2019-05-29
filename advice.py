@@ -72,16 +72,11 @@ def get_advice(sample_number, actual_vm_number=None, predictions=None, nn_error_
                 phase = 'production'
 
             best_prediction = min([(target_metric_max+target_metric_min)/2 - pred for pred in list(predictions.values())])
-
-            if (target_metric_min < best_prediction < target_metric_max):
-                indices = [ind for ind, val in enumerate(list(predictions.values())) if val == best_prediction]
-                needed_ks = [list(predictions.keys())[ind] for ind in indices]
-                vm_number_total = actual_vm_number+min(map(abs, needed_ks))
-                logger.debug(f'Advice is: {vm_number_total}, phase: {phase}.')
-                return advice_msg(valid=True, phase=phase, vm_number=vm_number_total, nn_error_rate=nn_error_rate)                      
-            else:
-                logger.debug(f'Advice: no scaling should be performed, phase: {phase}.')
-                return advice_msg(valid=True, phase=phase, vm_number=actual_vm_number, nn_error_rate=nn_error_rate)
+            indices = [ind for ind, val in enumerate(list(predictions.values())) if val == best_prediction]
+            needed_ks = [list(predictions.keys())[ind] for ind in indices]
+            vm_number_total = actual_vm_number+min(map(abs, needed_ks))
+            logger.debug(f'Advice is: {vm_number_total}, phase: {phase}.')
+            return advice_msg(valid=True, phase=phase, vm_number=vm_number_total, nn_error_rate=nn_error_rate)                      
             
         else:
             msg = 'Error occurred: empty predictions received: '

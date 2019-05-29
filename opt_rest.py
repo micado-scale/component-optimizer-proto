@@ -17,7 +17,7 @@ app = Flask(__name__)
 logger = None
 conf = None
 training_unit = None
-training_result = None
+training_result = []
 
 constants = {}
 sample_number = 0
@@ -68,9 +68,9 @@ def init():
         logger.debug('File created')
 
         global training_unit
-        training_unit = TrainingUnit(input_metrics, target_metrics, constants.get('target_metrics'), constants.get('max_number_of_scaling_activity'), constants.get('training_samples_required'), constants.get('nn_stop_error_rate'), constants.get('max_delta_vm',2))
+        training_unit = TrainingUnit(input_metrics, target_metrics, constants.get('target_metrics'), constants.get('max_number_of_scaling_activity', 100), constants.get('nn_stop_error_rate', 10.0), constants.get('max_delta_vm', 2))
         
-        advice.init(constants.get('target_metrics'),constants.get('training_samples_required'), constants.get('min_vm_number'), constants.get('max_vm_number'), constants.get('nn_stop_error_rate'))
+        advice.init(constants.get('target_metrics'),constants.get('training_samples_required', 10), constants.get('min_vm_number', 1), constants.get('max_vm_number', 10), constants.get('nn_stop_error_rate', 10.0))
         
         logger.info('Optimizer REST initialized successfully ')
     return jsonify('OK'), 200
@@ -105,9 +105,6 @@ def sample():
     else:
         sample = yaml.safe_load(sample_yaml)
         logger.debug(f'New sample received: {sample}')
-        global sample_number
-        sample_number += 1
-
         logger.debug('Gaining sample data...')
         input_metrics = [metric.get('value')
                          for metric in sample.get('sample').get('input_metrics')]
@@ -117,33 +114,35 @@ def sample():
         timestamp_col = [sample.get('sample').get('timestamp')]
         logger.debug('Sample data gained')
 
-        logger.debug(
-            'Calculating difference between previous and current VM number')
-        global vm_number_prev
-        vm_number_diff = vm_number-vm_number_prev \
-            if vm_number is not None and vm_number_prev is not None \
-            else None
-        vm_vals = [vm_number, vm_number_prev, vm_number_diff]
+        if None not in timestamp_col+input_metrics+target_metrics+[vm_number]: 
+            global sample_number
+            sample_number += 1
+            logger.debug('Calculating difference between previous and current VM number')
+            global vm_number_prev
+            vm_vals = [vm_number, vm_number_prev, vm_number-vm_number_prev]
 
-        logger.debug(
-            'Saving timestamp, input and target metrics to neural network data file...')
-        opt_utils.persist_data(conf.nn_filename,
-                               timestamp_col+input_metrics+target_metrics, 'a')
-        logger.debug('Data saved')
+            logger.debug(
+                'Saving timestamp, input and target metrics to neural network data file...')
+                
+            opt_utils.persist_data(conf.nn_filename,
+                                timestamp_col+input_metrics+target_metrics, 'a')
+            logger.debug('Data saved')
 
-        logger.debug(
-            'Saving timestamp, input metrics and VM number related data to linear regression data file...')
-        opt_utils.persist_data(conf.lr_filename,
-                               timestamp_col+input_metrics+vm_vals, 'a')
-        logger.debug('Data saved')
+            logger.debug(
+                'Saving timestamp, input metrics and VM number related data to linear regression data file...')
+            opt_utils.persist_data(conf.lr_filename,
+                                timestamp_col+input_metrics+vm_vals, 'a')
+            logger.debug('Data saved')
 
-        vm_number_prev = vm_number
-        logger.info('Sample received and processed.')
+            vm_number_prev = vm_number
+            logger.info('Sample received and processed.')
         
-        #training
-        global training_result
-        training_result = training_unit.train(sample_number)
-        print('Training result: ', training_result)
+            #training
+            if sample_number >= constants.get('training_samples_required', 10):
+                global training_result
+                training_result = training_unit.train()
+                print('Training result: ', training_result)
+
     return jsonify('OK'), 200
 
 

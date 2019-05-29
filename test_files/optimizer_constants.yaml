@@ -1,11 +1,10 @@
-#format!
 constants: 
-    min_vm_number: 2
-    max_vm_number: 5
+    min_vm_number: 1
+    max_vm_number: 10
+    max_delta_vm: 2
     training_samples_required: 10
-    max_number_of_iterations: 300
-    nn_stop_error_rate: 0.85 
-    lr_stop_error_rate: 0.92
+    max_number_of_scaling_activity: 100
+    nn_stop_error_rate: 10.0 
     input_metrics: 
       - name: number_of_requests 
       - name: cpu_usage 
@@ -13,7 +12,5 @@ constants:
       - name: number_of_ctx_switches
     target_metrics: 
       - name: response_time
-        min_threshold: 1
-        max_threshold: 7
-
-
+        min_threshold: 0.4
+        max_threshold: 0.75

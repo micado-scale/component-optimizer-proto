@@ -18,7 +18,7 @@ def opt_main():
     cfg = opt_utils.read_yaml(args.config_path)
 
     # create neccessary directories 
-    opt_utils.create_dirs(cfg.get('directories').values())
+    opt_utils.create_dirs(cfg.get('directories', ['data/nn_training_data.csv', 'data/lr_training_data.csv']).values())
 
     # create logger from provided config
     global logger

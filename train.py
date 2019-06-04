@@ -33,6 +33,8 @@ class TrainingUnit:
         self.lr_required_indices = []
         self.lr_required_data = [] 
         self.ind = 0
+        self.required_data_size_prev = 0
+        self.training_result_prev = None
 
         self.logger = logging.getLogger('optimizer')
 
@@ -75,7 +77,6 @@ class TrainingUnit:
         X_nn = self.nn_data[self.nn_data.columns[:-self.target_metric_number]]
         y_nn = self.nn_data[self.nn_data.columns[-self.target_metric_number:]]
 
-        self.logger.debug('LEARNING STARTS NOW.\n')
         self.logger.debug('Fitting neural network model...')
         self.neural_network_model.fit(X_nn, y_nn)
         nn_prediction = self.neural_network_model.predict(X_nn.iloc[-1:])
@@ -99,78 +100,87 @@ class TrainingUnit:
                     self.lr_required_indices.append(i)
                     self.logger.debug(f'New row found with index {i}')
             self.logger.debug(f'Required indices for LR: {self.lr_required_indices}')
+            
+            self.logger.debug(f'Required row count now: {len(self.lr_required_indices)}')
+            self.logger.debug(f'Previous required row count: {self.required_data_size_prev}')
+            self.logger.debug(f'Difference between them: {len(self.lr_required_indices) - self.required_data_size_prev}')
+            if len(self.lr_required_indices) >= 3:
+                if len(self.lr_required_indices) - self.required_data_size_prev != 0: 
+                    self.logger.info('Enough data for doing linear regression.')
+                    self.logger.debug('Collecting required rows...')
 
-            if len(self.lr_required_indices) >= 3: 
-                self.logger.info('Enough data for doing linear regression.')
-                self.logger.debug('Collecting required rows...')
+                    required_data_start_ind = len(self.lr_required_data)
+                    self.logger.debug(f'Collecting lr data starts from here): {required_data_start_ind}')
+                    self.logger.debug(f'Collecting lr data ends here: {len(self.lr_required_indices)-1}')
 
-                required_data_start_ind = len(self.lr_required_data)
-                self.logger.debug(f'Collecting lr data starts from here): {required_data_start_ind}')
-                self.logger.debug(f'Collecting lr data ends here: {len(self.lr_required_indices)-1}')
+                    for i in range(required_data_start_ind, len(self.lr_required_indices)-1):
+                        self.logger.debug(f'i = {i}')
+                        self.logger.debug(f'First half of row: {self.lr_data[self.lr_required_indices[i]][1:self.input_metric_number+2]}')
+                        self.logger.debug(f'Other half of row: {self.lr_data[self.lr_required_indices[i+1]][1:self.input_metric_number+1]}')
+                        self.lr_required_data.append(self.lr_data[self.lr_required_indices[i]][1:self.input_metric_number+2] + self.lr_data[self.lr_required_indices[i+1]][1:self.input_metric_number+1])
+                    
+                    self.logger.debug(f'Required data for LR now: {self.lr_required_data}')
+                    vm_numbers = [row[self.input_metric_number] for row in self.lr_required_data]
 
-                for i in range(required_data_start_ind, len(self.lr_required_indices)-1):
-                    self.logger.debug(f'i = {i}')
-                    self.logger.debug(f'First half of row: {self.lr_data[self.lr_required_indices[i]][1:self.input_metric_number+2]}')
-                    self.logger.debug(f'Other half of row: {self.lr_data[self.lr_required_indices[i+1]][1:self.input_metric_number+1]}')
-                    self.lr_required_data.append(self.lr_data[self.lr_required_indices[i]][1:self.input_metric_number+2] + self.lr_data[self.lr_required_indices[i+1]][1:self.input_metric_number+1])
-                
-                self.logger.debug(f'Required data for LR now: {self.lr_required_data}')
-                vm_numbers = [row[self.input_metric_number] for row in self.lr_required_data]
+                    for k in range(-self.max_delta_vm, self.max_delta_vm+1):
+                        self.logger.debug(f'\nNOW WE HAVE k = {k}')
 
-                for k in range(-self.max_delta_vm, self.max_delta_vm+1):
-                    self.logger.debug(f'\nNOW WE HAVE k = {k}')
+                        vm_numbers_total = [vm_num + k for vm_num in vm_numbers]
+                        self.logger.debug(f'vm_numbers_now: {vm_numbers}')
+                        self.logger.debug(f'vm_numbers_total: {vm_numbers_total}')
 
-                    vm_numbers_total = [vm_num + k for vm_num in vm_numbers]
-                    self.logger.debug(f'vm_numbers_now: {vm_numbers}')
-                    self.logger.debug(f'vm_numbers_total: {vm_numbers_total}')
+                        nonzero_vm_count = sum(1 for vm_num_total in vm_numbers_total if vm_num_total > 0)
+                        if nonzero_vm_count >= 2:
+                            self.logger.info('Enough positive vm count data after adding possible dVM-s to actual VM numbers, preparing for LR...')
+                            pred_for_a_single_k = []
+                            for i in range(self.input_metric_number):
+                                X_lr = []
+                                y_lr = []
+                                self.logger.debug(f'\nBulding model for {i+1}. metric... ')
+                                for j in range(len(self.lr_required_data)):
+                                    self.logger.debug(f'{j+1}. row in needed data, vm_numbers_total[j]: {vm_numbers_total[j]} ')
+                                    if vm_numbers_total[j] > 0:
+                                        X_lr.append([self.lr_required_data[j][i]*vm_numbers[j] / vm_numbers_total[j], self.lr_required_data[j][i]*k / vm_numbers_total[j]])
+                                        y_lr.append([self.lr_required_data[j][self.input_metric_number+i+1]])
+                                    else:
+                                        self.logger.debug('Skipping row')
+                                self.logger.debug(f'X_lr for the {i+1}. metric: {X_lr}')
+                                self.logger.debug(f'y_lr for the {i+1}. metric: {y_lr}\n')
+                                self.logger.debug(f'Fitting {i+1}. model...')
+                                self.linear_regression_models[i].fit(X_lr, y_lr)
+                                #could use all data for prediction instead of one
+                                self.logger.debug(f'weights: {self.linear_regression_models[i].coef_}')
+                                self.logger.debug(f'bias: {self.linear_regression_models[i].intercept_}')
+                                self.logger.debug(f'X_lr[-1]: { X_lr[-1]}')
+                                self.logger.debug(f'prediction: {self.linear_regression_models[i].predict([X_lr[-1]])}')
+                                error_lr = sqrt(mean_squared_error(y_lr, self.linear_regression_models[i].predict(X_lr)))
+                                self.logger.debug(f'RMS for actual metric: {error_lr}')
+                                pred_for_a_single_k.append((self.linear_regression_models[i].predict([X_lr[-1]])).item())
+                                self.logger.debug('. . . . . . . . . . . . . . . . . . . . . ')
+                            self.logger.debug(f'Pred for a single k: {pred_for_a_single_k}')
+                            lr_predictions.append(pred_for_a_single_k)
+                            k_values.append(k) 
+                            self.logger.debug('___________________________________')
 
-                    nonzero_vm_count = sum(1 for vm_num_total in vm_numbers_total if vm_num_total > 0)
-                    if nonzero_vm_count >= 2:
-                        self.logger.info('Enough positive vm count data after adding possible dVM-s to actual VM numbers, preparing for LR...')
-                        pred_for_a_single_k = []
-                        for i in range(self.input_metric_number):
-                            X_lr = []
-                            y_lr = []
-                            self.logger.debug(f'\nBulding model for {i+1}. metric... ')
-                            for j in range(len(self.lr_required_data)):
-                                self.logger.debug(f'{j+1}. row in needed data, vm_numbers_total[j]: {vm_numbers_total[j]} ')
-                                if vm_numbers_total[j] > 0:
-                                    X_lr.append([self.lr_required_data[j][i]*vm_numbers[j] / vm_numbers_total[j], self.lr_required_data[j][i]*k / vm_numbers_total[j]])
-                                    y_lr.append([self.lr_required_data[j][self.input_metric_number+i+1]])
-                                else:
-                                    self.logger.debug('Skipping row')
-                            self.logger.debug(f'X_lr for the {i+1}. metric: {X_lr}')
-                            self.logger.debug(f'y_lr for the {i+1}. metric: {y_lr}\n')
-                            self.logger.debug(f'Fitting {i+1}. model...')
-                            self.linear_regression_models[i].fit(X_lr, y_lr)
-                            #could use all data for prediction instead of one
-                            self.logger.debug(f'weights: {self.linear_regression_models[i].coef_}')
-                            self.logger.debug(f'bias: {self.linear_regression_models[i].intercept_}')
-                            self.logger.debug(f'X_lr[-1]: { X_lr[-1]}')
-                            self.logger.debug(f'prediction: {self.linear_regression_models[i].predict([X_lr[-1]])}')
-                            error_lr = sqrt(mean_squared_error(y_lr, self.linear_regression_models[i].predict(X_lr)))
-                            self.logger.debug(f'RMS for actual metric: {error_lr}')
-                            pred_for_a_single_k.append((self.linear_regression_models[i].predict([X_lr[-1]])).item())
-                            self.logger.debug('. . . . . . . . . . . . . . . . . . . . . ')
-                        self.logger.debug(f'Pred for a single k: {pred_for_a_single_k}')
-                        lr_predictions.append(pred_for_a_single_k)
-                        k_values.append(k) 
-                        self.logger.debug('___________________________________')
+                        else: 
+                            self.logger.error('Not enough positive vm count data after adding possible dVM-s to actual VM numbers.')
 
-                    else: 
-                        self.logger.error('Not enough positive vm count data after adding possible dVM-s to actual VM numbers.')
-
-                self.logger.debug(f'\nLR predictions: {lr_predictions}')
-                #now go back to nn with the predictions
-                nn_predictions = dict(zip(k_values, self.neural_network_model.predict(lr_predictions))) 
-                self.logger.info(f'\nNN Prediction after LR: {nn_predictions}')
-
+                    self.logger.debug(f'\nLR predictions: {lr_predictions}')
+                    #now go back to nn with the predictions
+                    nn_predictions = dict(zip(k_values, self.neural_network_model.predict(lr_predictions))) 
+                    self.logger.info(f'\nNN Prediction after LR: {nn_predictions}')
+                else: 
+                    self.logger.debug(f'No new lr data received. Returning previous training result: {self.training_result_prev}')
+                    return self.training_result_prev
             else:
                 error_msg = 'Not enough data for doing linear regression.'
                 self.logger.error(error_msg)
 
             self.ind = len(self.lr_data) 
+            self.required_data_size_prev = len(self.lr_required_indices)
             self.logger.debug(f'ind after one run: {self.ind}')
 
         self.logger.info('Training over.')
-        return [actual_vm_number, nn_predictions, nn_error_rate, error_msg]
+        training_result = [actual_vm_number, nn_predictions, nn_error_rate, error_msg]
+        self.training_result_prev = training_result 
+        return training_result

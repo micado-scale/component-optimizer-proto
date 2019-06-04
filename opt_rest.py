@@ -68,9 +68,10 @@ def init():
         logger.debug('File created')
 
         global training_unit
-        training_unit = TrainingUnit(input_metrics, target_metrics, constants.get('target_metrics'), constants.get('max_number_of_scaling_activity', 100), constants.get('nn_stop_error_rate', 10.0), constants.get('max_delta_vm', 2))
-        
-        advice.init(constants.get('target_metrics'),constants.get('training_samples_required', 10), constants.get('min_vm_number', 1), constants.get('max_vm_number', 10), constants.get('nn_stop_error_rate', 10.0))
+        logger.debug('Creating training unit...')
+        training_unit = TrainingUnit(conf, input_metrics, target_metrics, constants.get('target_metrics'), constants.get('max_number_of_scaling_activity', 100), constants.get('nn_stop_error_rate', 10.0), constants.get('max_delta_vm', 2))
+        logger.debug('Training unit created.')
+        advice.init(constants.get('target_metrics'), constants.get('training_samples_required', 10), constants.get('min_vm_number', 1), constants.get('max_vm_number', 10), constants.get('nn_stop_error_rate', 10.0))
         
         logger.info('Optimizer REST initialized successfully ')
     return jsonify('OK'), 200
@@ -105,18 +106,22 @@ def sample():
     else:
         sample = yaml.safe_load(sample_yaml)
         logger.debug(f'New sample received: {sample}')
-        logger.debug('Gaining sample data...')
+        logger.debug('Getting sample data...')
         input_metrics = [metric.get('value')
                          for metric in sample.get('sample').get('input_metrics')]
         target_metrics = [metric.get('value')
                           for metric in sample.get('sample').get('target_metrics')]
         vm_number = sample.get('sample').get('vm_number')
         timestamp_col = [sample.get('sample').get('timestamp')]
-        logger.debug('Sample data gained')
+        logger.debug('Sample data stored in corresponding variables.')
 
+        print(timestamp_col+input_metrics+target_metrics+[vm_number])
         if None not in timestamp_col+input_metrics+target_metrics+[vm_number]: 
+            logger.debug('Sample accepted.')
             global sample_number
             sample_number += 1
+            logger.debug('-----')
+            logger.debug(f'Number of samples now: {sample_number}')
             logger.debug('Calculating difference between previous and current VM number')
             global vm_number_prev
             vm_vals = [vm_number, vm_number_prev, vm_number-vm_number_prev]
@@ -139,10 +144,14 @@ def sample():
         
             #training
             if sample_number >= constants.get('training_samples_required', 10):
+                logger.debug('Enough valid sample for start training.')
                 global training_result
                 training_result = training_unit.train()
-                print('Training result: ', training_result)
-
+                logger.debug(f'Training result:  {training_result}')
+            else:
+                logger.debug('Not enough valid sample for start training.')
+        else:
+            logger.error('Sample ignored because it contains empty value.')
     return jsonify('OK'), 200
 
 

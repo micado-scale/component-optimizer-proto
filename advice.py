@@ -10,7 +10,7 @@ target_metric_max = None
 
 logger = logging.getLogger('optimizer')
 
-def init(_target_metric_thresholds, _training_samples_required=10, _min_vm_number=1,_max_vm_number=50,_nn_stop_error_rate=10.0):
+def init(_target_metric_thresholds, _training_samples_required=10, _min_vm_number=1,_max_vm_number=10,_nn_stop_error_rate=10.0):
     global logger
     global training_samples_required
     training_samples_required = _training_samples_required

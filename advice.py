@@ -57,9 +57,14 @@ def get_advice(sample_number, actual_vm_number=None, predictions=None, nn_error_
                               vm_number=int((max_vm_number+min_vm_number)/2))
         else:
             logger.info('Collecting samples to get training started...')
-            return advice_msg(valid=True, phase='pretraining', vm_number=actual_vm_number)
+            return advice_msg(valid=False, phase='pretraining')
     else:
         if predictions is not None:
+            logger.debug(f'Actual VM number: {actual_vm_number}')
+            logger.debug(f'Predictions: {predictions}')
+            logger.debug(f'NN error rate: {nn_error_rate}')
+            logger.debug(f'Error message: {error_msg}')
+
             phase = ''
             global target_metric_min
             global target_metric_max
@@ -71,7 +76,15 @@ def get_advice(sample_number, actual_vm_number=None, predictions=None, nn_error_
                 logger.debug('PRODUCTION MODE')
                 phase = 'production'
 
-            best_prediction = min([(target_metric_max+target_metric_min)/2 - pred for pred in list(predictions.values())])
+            pred_distances = [abs((target_metric_max+target_metric_min)/2 - pred) for pred in list(predictions.values())]
+            logger.debug(f'Pred distances: {pred_distances}')
+
+            min_pred_distance = min(pred_distances)
+            logger.debug(f'Min pred distance: {min_pred_distance}')
+
+            best_prediction = predictions.get(pred_distances.index(min_pred_distance))
+            
+            logger.debug(f'Best prediction: {best_prediction}')
             indices = [ind for ind, val in enumerate(list(predictions.values())) if val == best_prediction]
             needed_ks = [list(predictions.keys())[ind] for ind in indices]
             vm_number_total = actual_vm_number+min(map(abs, needed_ks))

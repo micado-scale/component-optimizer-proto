@@ -157,8 +157,11 @@ def sample():
 
 @app.route('/optimizer/advice', methods=['GET'])
 def get_advice():
+    global logger
     global sample_number
     global training_result
+    logger.debug(f'Sample number when advice was called: {sample_number}')
+    logger.debug(f'Training result: {training_result}')
     return advice.get_advice(sample_number, *training_result)
 
 class RequestException(Exception):

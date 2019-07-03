@@ -5,12 +5,13 @@ training_samples_required = None
 nn_stop_error_rate = None
 min_vm_number = None
 max_vm_number = None
+max_delta_vm_number = None
 target_metric_min = None
 target_metric_max = None
 
 logger = logging.getLogger('optimizer')
 
-def init(_target_metric_thresholds, _training_samples_required=10, _min_vm_number=1,_max_vm_number=10,_nn_stop_error_rate=10.0):
+def init(_target_metric_thresholds, _training_samples_required=10, _min_vm_number=1,_max_vm_number=10, _max_delta_vm=2, _nn_stop_error_rate=10.0):
     global logger
     global training_samples_required
     training_samples_required = _training_samples_required
@@ -20,6 +21,9 @@ def init(_target_metric_thresholds, _training_samples_required=10, _min_vm_numbe
 
     global max_vm_number
     max_vm_number = _max_vm_number
+
+    global max_delta_vm
+    max_delta_vm = _max_delta_vm
 
     global nn_stop_error_rate
     nn_stop_error_rate = _nn_stop_error_rate
@@ -74,15 +78,17 @@ def get_advice(sample_number, actual_vm_number=None, predictions=None, nn_error_
                 phase = 'training'
             else:
                 logger.debug('PRODUCTION MODE')
+                #lr-hez is kene kötni
                 phase = 'production'
 
+            logger.debug(f'Target min: {target_metric_min}, target max: {target_metric_max}')
             pred_distances = [abs((target_metric_max+target_metric_min)/2 - pred) for pred in list(predictions.values())]
             logger.debug(f'Pred distances: {pred_distances}')
 
             min_pred_distance = min(pred_distances)
             logger.debug(f'Min pred distance: {min_pred_distance}')
 
-            best_prediction = predictions.get(pred_distances.index(min_pred_distance))
+            best_prediction = predictions.get(pred_distances.index(min_pred_distance)-max_delta_vm)
             
             logger.debug(f'Best prediction: {best_prediction}')
             indices = [ind for ind, val in enumerate(list(predictions.values())) if val == best_prediction]

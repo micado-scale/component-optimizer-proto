@@ -5,4 +5,7 @@ WORKDIR /optimizer
 
 RUN pip install -r requirements.txt
 
-CMD python ./optimizer.py --cfg ./config/config.yaml --host 0.0.0.0
+COPY docker-entrypoint.sh /usr/local/bin/
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+CMD ["--cfg", "./config/config.yaml", "--host", "0.0.0.0"]

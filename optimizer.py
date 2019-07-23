@@ -26,7 +26,7 @@ def parse_arguments():
         description='MiCADO component to realize optimization of scaling decisions')
     parser.add_argument('--cfg',
                         dest='config_path',
-                        default='./config.yaml',
+                        default='./config/config.yaml',
                         help='path to configuration file')
 
     parser.add_argument('--host',

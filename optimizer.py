@@ -1,46 +1,25 @@
 import argparse
+import logging, logging.config
+import opt_rest, opt_utils
 
-import logging
-import logging.config
-
-import opt_rest
-import opt_utils
-
-logger = None
-args = None
-
-
-def opt_main():
-    global args
+def launch_optimizer():
     args = parse_arguments()
-
-    # load config file
-    cfg = opt_utils.read_yaml(args.config_path)
-
-    # create neccessary directories 
-    opt_utils.create_dirs(cfg.get('directories', ['data/nn_training_data.csv', 'data/lr_training_data.csv']).values())
-
-    # create logger from provided config
-    global logger
-    logger = create_logger(cfg)
-
-    # init service and run optimizer REST
-    opt_rest.init_service(cfg)
+    config = opt_utils.read_yaml(args.config_path)
+    create_logger(config)
+    opt_utils.create_dirs(config.get('directories', ['data', 'log']).values())
+    opt_rest.init_service(config)
     opt_rest.app.run(debug=True,
                      host=args.host,
                      port=args.port)
                      
-
 def create_logger(config):
     try:
         logging.config.dictConfig(config.get('logging'))
         logger = logging.getLogger('optimizer')
     except Exception as e:
-        print(f'ERROR: Cannot process configuration file "{args.config_path}": {e}')
+        print(f'ERROR: Cannot process configuration file: {e}')
     else:
-        logger.info('Optimizer initialized successfully')
-        return logger
-
+        logger.info('Optimizer initialized successfully.')
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -63,4 +42,4 @@ def parse_arguments():
 
 
 if __name__ == '__main__':
-    opt_main()
+    launch_optimizer()

@@ -84,7 +84,7 @@ def init():
         global training_unit
         global advice
 
-        #hianyzo default value??
+        #missing default val!
         training_unit = TrainingUnit(config, input_metrics, target_metrics, constants.get('target_metrics'), constants.get('max_number_of_scaling_activity', 100), constants.get('nn_stop_error_rate', 10.0), constants.get('max_delta_vm', 2))
         logger.debug('Training unit created.')
         advice.init(constants.get('target_metrics'), constants.get('training_samples_required', 10), constants.get('min_vm_number', 1), constants.get('max_vm_number', 10), constants.get('max_delta_vm', 2), constants.get('nn_stop_error_rate', 10.0))

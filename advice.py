@@ -87,7 +87,7 @@ def get_phase(nn_error_rate):
         return 'training'
     else:
         logger.debug('PRODUCTION MODE')
-        #lr-hez is kene kötni
+        #maybe should also depend on LR?
         return 'production'
 
 def get_scaling_decision(predictions):
@@ -98,8 +98,7 @@ def get_scaling_decision(predictions):
             min_pred_distance = min(list(pred_distances.values()))
             logger.debug(f'Min pred distance: {min_pred_distance}')
 
-            #keressük a legjobb predikciót (amelyik k-ját később visszaadjuk)
-            #kivalogatjuk az osszeset, ami minimalis. ha több van, akkor advice = 0, ha 1, akkor ez az 1 lesz az decision
+            #returns k that leads to the least change if there is a single k, 0 otherwise
             best_ks = [k for k, pred in pred_distances.items() if pred == min_pred_distance]
             logger.debug(f'Best k-s: {best_ks}')
             scaling_decision = 0 if len(best_ks) != 1 else best_ks[0]

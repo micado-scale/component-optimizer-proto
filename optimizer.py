@@ -4,14 +4,7 @@ import opt_rest, opt_utils
 
 def launch_optimizer():
     args = parse_arguments()
-
-    # load config file
-    cfg = opt_utils.read_yaml(args.config_path)
-
-    # create neccessary directories 
-    opt_utils.create_dirs(cfg.get('directories', ['data', 'log']).values())
-
-    # create logger from provided config
+    #read config from provided args
     config = opt_utils.read_yaml(args.config_path)
     create_logger(config)
     opt_utils.create_dirs(config.get('directories', ['data', 'log']).values())

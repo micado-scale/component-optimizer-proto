@@ -56,10 +56,13 @@ def persist_data(filename, data, mode):
     try:
         with open(filename, mode) as stream:
             wr = csv.writer(stream, quoting=csv.QUOTE_NONNUMERIC)
-            wr.writerow(data)
+            if isinstance(data[0], list):
+                for line in data: 
+                    wr.writerow(line)
+            else:
+                wr.writerow(data)
     except (FileNotFoundError, IOError) as e:
         logger.error(e)
-
 
 def zip_files(files, zip_filename):
     global logger

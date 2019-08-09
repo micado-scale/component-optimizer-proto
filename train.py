@@ -17,24 +17,39 @@ import logging
 
 class TrainingUnit:
     def __init__(self, conf, input_metrics, target_metrics, target_metrics_thresholds, max_number_of_scaling_activity=100, nn_stop_error_rate=10.0, max_delta_vm=2):
+        
         self.conf = conf
+        self.logger = logging.getLogger('optimizer')
+        self.logger.debug('TrainingUnit init called.')
+        
         self.input_metrics = input_metrics
+        self.logger.debug(f'self.input_metrics: {self.input_metrics}')
         self.target_metrics = target_metrics
+        self.logger.debug(f'self.target_metrics: {self.target_metrics}')
         self.input_metric_number = len(input_metrics)
+        self.logger.debug(f'self.input_metric_number: {self.input_metric_number}')
         self.target_metric_number = len(target_metrics)
+        self.logger.debug(f'self.target_metric_number: {self.target_metric_number}')
         self.target_metrics_thresholds = target_metrics_thresholds
+        self.logger.debug(f'self.target_metrics_thresholds: {self.target_metrics_thresholds}')
         self.max_number_of_scaling_activity = max_number_of_scaling_activity
+        self.logger.debug(f'self.max_number_of_scaling_activity: {self.max_number_of_scaling_activity}')
         self.nn_stop_error_rate = nn_stop_error_rate
+        self.logger.debug(f'self.nn_stop_error_rate: {self.nn_stop_error_rate}')
         self.max_delta_vm = max_delta_vm
-
+        self.logger.debug(f'self.max_delta_vm: {self.max_delta_vm}')
         self.neural_network_model = self.configure_neural_network()
+        self.logger.debug(f'self.neural_network_model: {self.neural_network_model}')
+        
         self.linear_regression_models = self.configure_linear_regression_models()
+        self.logger.debug(f'self.linear_regression_models: {self.linear_regression_models}')
         
         self.nn_data = pd.read_csv(self.conf.nn_filename, sep=',', header=0, index_col=0)
+        self.logger.debug(f'self.nn_data: {self.nn_data}')        
         self.lr_data = read_data(self.conf.nn_filename, skip_header=True)
         self.scaler = MinMaxScaler(feature_range=(0,1))
         
-        self.lr_required_indices = []
+        self.lr_required_indices = [0]
         self.lr_required_data = [] 
         self.ind = 0
         self.required_data_size_prev = 0
@@ -43,9 +58,8 @@ class TrainingUnit:
         #persist_data('nn_errors_normalized.csv', ['actual_latency', 'predicted_latency', 'rmse'], 'w')
         #persist_data('lr_predictions.csv', ['metric1', 'metric2', 'metric3', 'metric4', 'metric5', 'metric6', 'metric7', 'metric8', 'metric9'], 'w')
         #persist_data('lr_predictions_scaled.csv', ['metric1', 'metric2', 'metric3', 'metric4', 'metric5', 'metric6', 'metric7', 'metric8', 'metric9'], 'w')
+        self.logger.debug('Training unit init done.')
 
-
-        self.logger = logging.getLogger('optimizer')
 
     def configure_neural_network(self):
         return MLPRegressor(hidden_layer_sizes=(int(self.input_metric_number+self.target_metric_number/2),),
